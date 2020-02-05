@@ -23,6 +23,6 @@ instance FromRow Session where
 instance ToRow Session
 
 instance IsSession Session where
-  getIdentifier = T.pack . show . s_sessionKey 
+  getIdentifier = s_sessionKey 
 
 
