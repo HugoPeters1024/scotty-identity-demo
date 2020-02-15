@@ -11,10 +11,12 @@ import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.ToRow
 import qualified Data.Vault.Lazy as V
 import Web.Scotty
+import Web.Scotty.Identity
 import Web.Scotty.Cookie
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Data.Aeson (FromJSON, ToJSON, encode, decode, parseJSON, withObject, (.:))
 import Network.Wai (Application, Middleware, Request, Response, ResponseReceived, vault, strictRequestBody, lazyRequestBody)
+import Crypto.Hash.SHA256 (hash)
 import Data.Text.Lazy as LT
 import qualified Data.Text as T
 import Data.UUID
@@ -25,7 +27,6 @@ import Post
 import ErrorRes
 import UserPage
 import LoginPage
-import Auth
 import Session
 
 main :: IO ()
@@ -39,17 +40,12 @@ main = do
   }
   let gu = getUser conn
   let vu = \u p -> True
-  (mkAuth, routeLogin) <- useAuth (getSession conn) verifySession (sessionToUser conn) (retrieveUser conn) (createSession conn)
+  let (mkAuth, mkAuthM, routeLoginPost, routeLogout) = configureAuth (getSession conn) (sessionToUser conn) (retrieveUser conn) (createSession conn) hash
   scotty 3000 $ do
-    get "/" $ do
-      hits <- liftM (fromMaybe "") $ getCookie "hits"
-      let hits' = T.append hits "t"
-      setSimpleCookie "hits" hits'
-      text $ LT.fromStrict hits'
     get "/user"   $ mkAuth $ routeUser conn
-    post "/login" $ routeLogin
-    get "/login"  $ fromHtml $ loginPage
-    get "/logout" $ removeLoginCookie
+    post "/login" $ routeLoginPost >>= \_ -> redirect "user"
+    get "/login"  $ mkAuthM $ routeLogin
+    get "/logout" $ routeLogout >>= \_ -> redirect "/login"
 
 getSession :: Connection -> UUID -> IO (Maybe Session)
 getSession conn key = headM <$> query conn "select * from sessions where key = ?" [key]
@@ -73,6 +69,9 @@ createSession conn user = do
         Just (Only x)  -> x
   return (Session q uuid 0)
 
+routeLogin :: Maybe User -> ActionM ()
+routeLogin Nothing = fromHtml loginPage
+routeLogin (Just _) = redirect "/user"
 
 routeUser :: Connection -> User -> ActionM ()
 routeUser conn user = do

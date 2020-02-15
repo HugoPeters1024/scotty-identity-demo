@@ -4,25 +4,27 @@
 module User where
 
 import GHC.Generics
+import Data.Maybe (fromMaybe)
 import Database.PostgreSQL.Simple.FromRow
 import Data.Aeson (ToJSON)
-import Auth (IsUser, getUsername, getPassword)
-import qualified Data.ByteString.Lazy as LB
+import Web.Scotty.Identity (IsUser, getUsername, getPassword)
+import qualified Data.ByteString as BT
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text as T
+import Text.Hex
+
 
 data User = User {
     u_userId :: Int
-  , u_userName :: String
-  , u_password :: String
+  , u_userName :: T.Text
+  , u_password :: BT.ByteString
 } deriving (Show, Generic)
 
-instance ToJSON User
 instance FromRow User where
-  fromRow = User <$> field <*> field <*> field
+  fromRow = User <$> field <*> field <*> ((fromMaybe "" . decodeHex) <$> field)
 
 instance IsUser User where
-  getUsername = T.pack . u_userName
-  getPassword = T.pack . u_password
+  getUsername = u_userName
+  getPassword = u_password
 
 

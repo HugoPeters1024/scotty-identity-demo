@@ -9,7 +9,7 @@ import Database.PostgreSQL.Simple.ToRow
 import Data.Aeson (ToJSON)
 import Data.UUID
 import qualified Data.Text as T
-import Auth
+import Web.Scotty.Identity (IsSession, getIdentifier)
 
 data Session = Session {
     s_id :: Int

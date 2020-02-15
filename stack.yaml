@@ -29,7 +29,8 @@ resolver: lts-9.21
 #   - auto-update
 #   - wai
 packages:
-- .
+ - '.'
+ - scotty-identity
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
@@ -41,6 +42,7 @@ packages:
 #
 extra-deps:
   - scotty-cookie-0.1.0.3@sha256:3ff1df13a5acba8ba170a5ac22b3ac6a2c227791292536ce1ebfc41038f58fc9,1204
+  - hex-text-0.1.0.0@sha256:52dc2cf5ce45f7d86ea5e56e2ac57820f788c10bbb3fe83f6d57e678a426305b,1072
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
